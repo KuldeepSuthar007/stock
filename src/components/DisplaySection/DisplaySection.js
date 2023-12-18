@@ -1,40 +1,67 @@
 import React, { useEffect, useState } from 'react'
 
-function DisplaySection({ input }) {
-
+function DisplaySection() {
+    const [input, setInput] = useState([]);
     const [stockdata, setStockdata] = useState([]);
-    const fetchdata = async () => {
-        const url = `https://finnhub.io/api/v1/quote?symbol=${input}&token=cj2aqkpr01qi64tg1360cj2aqkpr01qi64tg136g`;
-        const response = await fetch(url);
-        const data = await response.json();
-        setStockdata([data]);
+    const [mostVolatileCompany, setMostVolatileCompany] = useState('');
+    const [pertChange, setPertageChange] = useState(0);
 
 
+    const handleSearch = () => {
+        const fetchdata = async () => {
+            const url = `https://finnhub.io/api/v1/quote?symbol=${input}&token=cj2aqkpr01qi64tg1360cj2aqkpr01qi64tg136g`;
+            const response = await fetch(url);
+            const data = await response.json();
+            setStockdata([...stockdata, { name: input, volatile: data.dp, price: data.c }]);
+        }
+        fetchdata();
+        setInput('');
+    }
+
+    const calculate = () => {
+        if (Math.abs(stockdata.map(item => item.volatile)) > Math.abs(pertChange)) {
+            setMostVolatileCompany(stockdata.map(item => item.name));
+            setPertageChange(stockdata.map(item => item.volatile));
+        }
     }
     useEffect(() => {
-        fetchdata();
+        calculate();
     }, [input])
 
 
     return (
-        <div className='display'>
-            <div className='stock'>
-                {stockdata.map((item, i) => {
-                    return (
-                        <div key={i}>
-                            <p>Stock :-    <span>{input}</span>|</p>
-                            <p>current price :- <span>{item.c}</span></p>
-                            {/* <p><span>Change :- </span>{item.d}</p>
-                            <p><span>Percent change :- </span>{item.dp}</p>
-                            <p><span>High price of the day:- </span>{item.h}</p>
-                            <p><span>Low price of the day:- </span>{item.l}</p>
-                            <p><span>Open price of the day :- </span>{item.o}</p> */}
-                        </div>
-                    )
-                }
-                )}
+        <>
+            <div className="inputbox">
+                <input type="text" placeholder='type stock name here' value={input || ""} onChange={(e) => setInput(e.target.value)} />
+                <button onClick={handleSearch}>Search</button>
             </div>
-        </div>
+            <div className='display'>
+                <div className='stock'>
+                    {stockdata.map((item, i) => {
+                        return (
+                            <div key={i} >
+                                <p>Stock :-    <span>{item.name}</span>|</p>
+                                <p>current price :- <span>{item.price}</span></p>
+                            </div>
+                        )
+                    }
+                    )}
+                </div >
+                <div>
+                    {mostVolatileCompany && (
+                        <div className='stock' >
+                            <p>{mostVolatileCompany}</p>
+                            <p>{pertChange}%</p>
+                        </div>
+                    )}
+                </div>
+
+
+
+
+            </div>
+        </>
+
     )
 }
 
